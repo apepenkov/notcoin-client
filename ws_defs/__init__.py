@@ -7,6 +7,7 @@ from .ws_defs import (
     WsDataPrint,
     WsDataReloadClient,
     WsDataClientFullyStopped,
+    WsDataActivateTurboBoost,
     WsMessageDataSendClientsClient,
     Color,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "WsDataPrint",
     "WsDataReloadClient",
     "WsDataClientFullyStopped",
+    "WsDataActivateTurboBoost",
     "WsMessageDataSendClientsClient",
     "Color",
 ]

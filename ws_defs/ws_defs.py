@@ -14,6 +14,7 @@ class WsMessageTypes(enum.IntEnum):
     MT_S_ReloadClient = 5  # reload client
     MT_C_ClientReloaded = 6  # client reloaded
     MT_S_ClientFullyStopped = 7  # client fully stopped
+    MT_C_ActivateTurboBoost = 8  # activate turbo boost
 
 
 colors = {"green": "\033[92m", "red": "\033[91m", "blue": "\033[94m", "": "\033[0m"}
@@ -160,6 +161,20 @@ class WsDataClientFullyStopped(SomeWsData):
         return cls(client_name=data["client_name"])
 
 
+class WsDataActivateTurboBoost(SomeWsData):
+    client_name: str
+
+    def __init__(self, client_name: str):
+        self.client_name = client_name
+
+    def to_json(self):
+        return {"client_name": self.client_name}
+
+    @classmethod
+    def from_json(cls, data):
+        return cls(client_name=data["client_name"])
+
+
 binds = {
     WsMessageTypes.MT_S_InUse: None,
     WsMessageTypes.MT_S_SendClients: None,
@@ -169,6 +184,7 @@ binds = {
     WsMessageTypes.MT_S_ReloadClient: WsDataReloadClient,
     WsMessageTypes.MT_C_ClientReloaded: None,
     WsMessageTypes.MT_S_ClientFullyStopped: WsDataClientFullyStopped,
+    WsMessageTypes.MT_C_ActivateTurboBoost: WsDataActivateTurboBoost,
 }
 
 

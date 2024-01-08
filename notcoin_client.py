@@ -150,7 +150,7 @@ class NotCoinAccountClient:
 
             while True:
                 messages = await self.telegram_client.get_messages(entity=ent)
-                if len(messages) > 0:
+                if len(messages) >= 2:
                     break
                 await asyncio.sleep(1)
 
