@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import json
+import time
 import tracemalloc
 import websockets
 import ws_defs
@@ -256,8 +257,8 @@ class WebsocketClient:
             logger.info("All clients sent!")
 
         elif msg.message_type == ws_defs.WsMessageTypes.MT_S_ErrorDisconnect:
-            logger.error("Error from server: " + msg.data.error_message)
-            raise ValueError("Error: " + msg.data.error_message)
+            logger.error("Error from server: " + msg.data.message)
+            raise ValueError("Error: " + msg.data.message)
         elif msg.message_type == ws_defs.WsMessageTypes.MT_S_Print:
             message: ws_defs.WsDataPrint = msg.data
             print(message.color.to_str(message.message))
