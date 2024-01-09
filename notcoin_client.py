@@ -318,7 +318,6 @@ class WebsocketClient:
                 raise
 
 
-
 async def main():
     accounts = []
     for file in os.listdir("configs"):
@@ -339,16 +338,19 @@ async def main():
 
     logger.info("Authenticated! Running websocket client...")
     client = WebsocketClient(accounts)
-    try:
-        await client.run()
-    except KeyboardInterrupt:
-        exit(0)
-    except websockets.exceptions.ConnectionClosedError:
-        logger.error("Connection closed")
-        exit_after_enter()
-    except Exception as e:
-        logger.exception(e)
-        exit_after_enter()
+    while True:
+        try:
+            await client.run()
+        except KeyboardInterrupt:
+            exit(0)
+        except websockets.exceptions.ConnectionClosedError:
+            logger.error("Connection closed")
+        except Exception as e:
+            logger.exception(e)
+            exit_after_enter()
+
+        logger.info("Reconnecting in 5 seconds...")
+        await asyncio.sleep(5)
 
 
 if __name__ == "__main__":
