@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import json
+import sys
 import time
 import tracemalloc
 import websockets
@@ -17,7 +18,8 @@ from urllib.parse import urlparse, parse_qs
 
 
 def exit_after_enter():
-    input("Press enter to exit...")
+    sys.stdout.flush()
+    input("\nPress enter to exit...\n")
     exit(1)
 
 
@@ -212,6 +214,11 @@ class NotCoinAccountClient:
 
 
 WS_URL = "wss://nocoin.aperlaqf.work/client_request"
+LOCALE = configuration["locale"]
+if LOCALE not in ("en", "ru"):
+    logger.error(f"Locale {LOCALE} not found! Possible locales: en, ru")
+    logger.error(f"Язык {LOCALE} не найден! Возможные языки: en, ru")
+    exit_after_enter()
 
 
 class WebsocketClient:
@@ -220,6 +227,7 @@ class WebsocketClient:
         self.accounts = {account.name: account for account in accounts}
         self.write_lock = asyncio.Lock()
         self.ws: typing.Optional[websockets.WebSocketClientProtocol] = None
+        self._locales = {}
 
     async def send_message(
         self,
@@ -278,6 +286,19 @@ class WebsocketClient:
             self.logger.error(
                 f"Server notified that client {msg.data.client_name} is fully stopped."
             )
+        elif msg.message_type == ws_defs.WsMessageTypes.MS_S_Locales:
+            message: ws_defs.WsDataLocales = msg.data
+            if LOCALE not in message.locales:
+                raise ValueError(f"Locale {LOCALE} not found!")
+            self._locales = message.locales[LOCALE]
+        elif msg.message_type == ws_defs.WsMessageTypes.MT_S_LocaledMessage:
+            message: ws_defs.WsDataLocaledMessage = msg.data
+            if message.locale_key not in self._locales:
+                raise ValueError(f"Locale key {message.locale_key} not found!")
+            text = self._locales[message.locale_key]
+            if message.formatting:
+                text = text.format(*message.formatting)
+            print(message.color.to_str(text))
 
     async def run(self):
         async with websockets.connect(
@@ -311,11 +332,12 @@ async def main():
         await client.run()
     except KeyboardInterrupt:
         exit(0)
+    except websockets.exceptions.ConnectionClosedError:
+        logger.error("Connection closed")
+        exit_after_enter()
     except Exception as e:
         logger.exception(e)
         exit_after_enter()
-
-
 
 
 if __name__ == "__main__":

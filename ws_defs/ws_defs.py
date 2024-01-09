@@ -15,9 +15,11 @@ class WsMessageTypes(enum.IntEnum):
     MT_C_ClientReloaded = 6  # client reloaded
     MT_S_ClientFullyStopped = 7  # client fully stopped
     MT_C_ActivateTurboBoost = 8  # activate turbo boost
+    MT_S_LocaledMessage = 9  # send locale code and formatting params to client
+    MS_S_Locales = 10  # send locales to client
 
 
-colors = {"green": "\033[92m", "red": "\033[91m", "blue": "\033[94m", "": "\033[0m"}
+colors = {"green": "\033[92m", "red": "\033[91m", "blue": "\033[94m", "": "\033[0m", "yellow": "\033[93m"}
 color_reset = "\033[0m"
 
 
@@ -26,6 +28,7 @@ class Color(enum.StrEnum):
     Red = "red"
     Blue = "blue"
     None_ = ""
+    Yellow = "yellow"
 
     def to_str(self, text: str):
         return color_reset + colors[self.value] + text + color_reset
@@ -175,6 +178,38 @@ class WsDataActivateTurboBoost(SomeWsData):
         return cls(client_name=data["client_name"])
 
 
+class WsDataLocaledMessage(SomeWsData):
+    locale_key: str
+    formatting: typing.List[typing.Any]
+    color: Color
+
+    def __init__(self, locale_key: str, formatting: typing.List[typing.Any], color: Color):
+        self.locale_key = locale_key
+        self.formatting = formatting
+        self.color = color
+
+    def to_json(self):
+        return {"locale_key": self.locale_key, "formatting": self.formatting, "color": self.color.value}
+
+    @classmethod
+    def from_json(cls, data):
+        return cls(locale_key=data["locale_key"], formatting=data["formatting"], color=Color(data["color"]))
+
+
+class WsDataLocales(SomeWsData):
+    locales: typing.Dict[str, typing.Dict[str, str]] # {"en": {"key": "value"}, "ru": {"key": "value"}}
+
+    def __init__(self, locales: typing.Dict[str, typing.Dict[str, str]]):
+        self.locales = locales
+
+    def to_json(self):
+        return {"locales": self.locales}
+
+    @classmethod
+    def from_json(cls, data):
+        return cls(locales=data["locales"])
+
+
 binds = {
     WsMessageTypes.MT_S_InUse: None,
     WsMessageTypes.MT_S_SendClients: None,
@@ -185,6 +220,8 @@ binds = {
     WsMessageTypes.MT_C_ClientReloaded: None,
     WsMessageTypes.MT_S_ClientFullyStopped: WsDataClientFullyStopped,
     WsMessageTypes.MT_C_ActivateTurboBoost: WsDataActivateTurboBoost,
+    WsMessageTypes.MS_S_Locales: WsDataLocales,
+    WsMessageTypes.MT_S_LocaledMessage: WsDataLocaledMessage
 }
 
 

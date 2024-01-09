@@ -39,5 +39,6 @@
     "retry_delay": 5,
     "auto_reconnect": true
   },
-  "ref": "rp_4220671"
+  "ref": "rp_4220671",
+  "locale": "en"
 }
