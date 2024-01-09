@@ -301,13 +301,22 @@ class WebsocketClient:
             print(message.color.to_str(text))
 
     async def run(self):
-        async with websockets.connect(
-            WS_URL + "?license_key=" + license_key,
-        ) as self.ws:
-            self.ws: websockets.WebSocketClientProtocol
-            while True:
-                message = await self.ws.recv()
-                await self.process_message(message)
+        try:
+            async with websockets.connect(
+                WS_URL + "?license_key=" + license_key,
+            ) as self.ws:
+                self.ws: websockets.WebSocketClientProtocol
+                while True:
+                    message = await self.ws.recv()
+                    await self.process_message(message)
+        except websockets.exceptions.InvalidStatusCode as e:
+            if e.status_code == 400:
+                logger.error("Invalid or expired license key!")
+                logger.error("Неверный или просроченный ключ лицензии!")
+                exit_after_enter()
+            else:
+                raise
+
 
 
 async def main():
@@ -315,6 +324,8 @@ async def main():
     for file in os.listdir("configs"):
         with open("configs/" + file) as cnf_read:
             name = file.split(".")[0]
+            if name == "example":
+                continue
             accounts.append(NotCoinAccountClient(name, json.load(cnf_read)))
 
     if len(accounts) == 0:

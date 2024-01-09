@@ -1,7 +1,8 @@
 notcoin-client.iml
 .idea
 configuration.json
-sessions
-configs
+sessions/*
+configs/*
+!configs/example.json
 license.txt
 configs_disabled

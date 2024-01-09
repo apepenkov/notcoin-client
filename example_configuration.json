@@ -1,8 +1,8 @@
 {
   "bot_config": {
     "skewing": {
-      "0.2": "1.05",
-      "0.3": "1.02",
+      "0.2": "1.2",
+      "0.3": "1.15",
       "0.4": "0.95",
       "0.5": "0.9",
       "0.6": "0.85",
@@ -21,8 +21,8 @@
     "boost_send_once_per_to_ms": 2000,
     "activate_turbo": true,
     "sleep_before_activate_turbo_ms": 800,
-    "turbo_press_delay_from_ms": 100,
-    "turbo_press_delay_to_ms": 180,
+    "turbo_press_delay_from_ms": 70,
+    "turbo_press_delay_to_ms": 130,
     "refresh_speed_every_sec": 60,
     "try_buy_every_from_sec": 120,
     "try_buy_every_to_sec": 300
