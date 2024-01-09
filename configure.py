@@ -11,7 +11,7 @@ def main_en():
             api_id = input("API ID: ").strip()
             api_id = int(api_id) if api_id.isdigit() else None
             if api_id is None:
-                print("API ID must be an digit")
+                print("API ID must be digit")
         api_hash = None
         while api_hash is None:
             api_hash = input("API hash: ").strip()
