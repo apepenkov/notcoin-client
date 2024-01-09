@@ -19,7 +19,7 @@
 }
 ```
 
-6. Open `[python](https://www.python.org/ftp/python/3.11.4/python-3.11.4-amd64.exe)`, navigate to the folder with the bot
+6. Open `cmd`, navigate to the folder with the bot
 
 7. Run 
 ```bash
