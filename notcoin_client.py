@@ -99,6 +99,10 @@ with open("license.txt") as f:
 del f
 
 
+class ServerNotRunningException(Exception):
+    pass
+
+
 async def execute_tasks_in_chunks(
     tasks: list,
     chunk_size: int,
@@ -314,6 +318,8 @@ class WebsocketClient:
                 logger.error("Invalid or expired license key!")
                 logger.error("Неверный или просроченный ключ лицензии!")
                 exit_after_enter()
+            elif e.status_code == 502:
+                raise ServerNotRunningException()
             else:
                 raise
 
@@ -345,6 +351,8 @@ async def main():
             exit(0)
         except websockets.exceptions.ConnectionClosedError:
             logger.error("Connection closed")
+        except ServerNotRunningException:
+            logger.error("Server is not running")
         except Exception as e:
             logger.exception(e)
             exit_after_enter()
