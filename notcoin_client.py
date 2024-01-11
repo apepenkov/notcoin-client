@@ -3,7 +3,9 @@ import logging
 import os
 import json
 import sys
-import time
+import io
+import datetime
+import qrcode
 import tracemalloc
 import websockets
 import ws_defs
@@ -136,9 +138,27 @@ class NotCoinAccountClient:
         await self.telegram_client.connect()
         if not await self.telegram_client.is_user_authorized():
             self.logger.info(
-                f"Telegram client {self.name} is not authorized! Authorizing..."
+                f"Telegram client {self.name} is not authorized! Please scan qr code in your telegram app.."
             )
-            await self.telegram_client.start()
+            # await self.telegram_client.start()
+            tg_qr = await self.telegram_client.qr_login()
+            while True:
+                qr = qrcode.QRCode()
+                qr.add_data(tg_qr.url)
+                qr_f = io.StringIO()
+                qr.print_ascii(out=qr_f)
+                qr_f.seek(0)
+                print(qr_f.read())
+                expires_in = tg_qr.expires.timestamp() - datetime.datetime.now().timestamp()
+                try:
+                    await tg_qr.wait(timeout=expires_in)
+                    break
+                except asyncio.TimeoutError:
+                    self.logger.warning("Qr expired!")
+                    await tg_qr.recreate()
+
+            self.logger.info(f"Telegram client {self.name} authorized!")
+        else:
             self.logger.info(f"Telegram client {self.name} authorized!")
 
     async def get_webapp_data(self) -> typing.Tuple[str, str]:
@@ -200,7 +220,7 @@ class NotCoinAccountClient:
                         break
 
         if not resp:
-            raise ValueError("No webview found")
+            raise ValueError(f"No webview found, account {self.name}")
 
         webapp_data = parse_qs(urlparse(resp.url).fragment)["tgWebAppData"][0]
 

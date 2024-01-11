@@ -6,5 +6,6 @@ configs/*
 !configs/example.json
 license.txt
 configs_disabled
+configs_backup
 __pycache__
 ws_defs/__pycache__
