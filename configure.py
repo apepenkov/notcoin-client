@@ -44,6 +44,10 @@ def main_en():
 
     try:
         import telethon
+        import websockets
+        import asyncio
+        import colorlog
+        import qrcode
     except ImportError:
         print("Installing requirements...")
         os.system("pip install -r requirements.txt")
@@ -93,6 +97,10 @@ def main_ru():
 
     try:
         import telethon
+        import websockets
+        import asyncio
+        import colorlog
+        import qrcode
     except ImportError:
         print("Установка зависимостей...")
         os.system("pip install -r requirements.txt")
@@ -100,7 +108,7 @@ def main_ru():
     print("Конфигурация загружена и готова к использованию!")
 
 
-if __name__ == "__main__":
+def configure_main():
     print("Select language:")
     print("1. English")
     print("2. Russian")
@@ -114,3 +122,7 @@ if __name__ == "__main__":
             break
         else:
             print("Invalid input")
+
+
+if __name__ == "__main__":
+    configure_main()

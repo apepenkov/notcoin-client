@@ -25,7 +25,7 @@
 ```bash
 python configure.py
 ```
-and supply required data
+and supply required data (you only have to do this once)
 - api_id - from the telegram website, obtained in step 2
 - api_hash - from the telegram website, obtained in step 2
 - ref - your ref parameter. Empty to leave blank.

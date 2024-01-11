@@ -1,6 +1,11 @@
+import os
+from configure import configure_main
+if not os.path.isfile("configuration.json"):
+    print("Configuration not found!")
+    configure_main()
+
 import asyncio
 import logging
-import os
 import json
 import sys
 import io
