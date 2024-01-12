@@ -3,3 +3,4 @@ websockets>=12.0
 Telethon>=1.32.0
 colorlog>=6.7.0
 qrcode>=7.4.2
+python-socks[asyncio]>=2.4.4

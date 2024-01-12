@@ -15,7 +15,7 @@
 ```json
 {
 "proxy": "http://login:password@ip:port",
-"configuration": null
+"configuration": null, "use_proxy_for_telegram": false
 }
 ```
 

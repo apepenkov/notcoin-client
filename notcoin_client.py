@@ -8,6 +8,7 @@ if not os.path.isfile("configuration.json"):
 import asyncio
 import logging
 import json
+import python_socks
 import sys
 import io
 import datetime
@@ -24,6 +25,7 @@ import telethon.tl.functions.messages
 from telethon import TelegramClient
 from urllib.parse import urlparse, parse_qs
 
+asyncio.set_event_loop(asyncio.SelectorEventLoop())
 
 def exit_after_enter():
     sys.stdout.flush()
@@ -35,7 +37,7 @@ tracemalloc.start()
 
 NO_COLOR_MODE = os.getenv("NO_COLOR", "").lower() in ("true", "1", "yes")
 # logging level for 3rd party libraries
-GLOBAL_LOGGING_LEVEL = logging.WARNING
+GLOBAL_LOGGING_LEVEL = logging.DEBUG
 # logging level for the bot
 LOCAL_LOGGING_LEVEL = logging.DEBUG
 LOGGING_FORMAT = "%(asctime)-15s.%(msecs)03d [%(levelname)-8s] %(name)-22s > %(filename)-18s:%(lineno)-5d - %(message)s"
@@ -125,6 +127,7 @@ class NotCoinAccountClient:
     def __init__(self, name, config):
         self.name = name
         self.proxy = config["proxy"]
+        self.use_proxy_for_telegram: bool = config.get("use_proxy_for_telegram", True)
         if not self.proxy:
             logger.error(f"Proxy for account {self.name} not found!")
             exit_after_enter()
@@ -138,9 +141,41 @@ class NotCoinAccountClient:
     async def prepare_telegram_client(self):
         if self.telegram_client:
             return
-        self.telegram_client = TelegramClient(
-            "sessions/" + self.name, **configuration["tg_kwargs"]
-        )
+        proxy_str = self.proxy
+
+        is_https = "https" in proxy_str
+
+        proxy_str = proxy_str.replace("https://", "").replace("http://", "")
+
+        username = None
+        password = None
+        if "@" in proxy_str:
+            login, proxy_str = proxy_str.split("@")
+            if ":" in login:
+                username, password = login.split(":")
+            else:
+                raise ValueError(f"Invalid proxy {self.proxy}")
+
+        if ":" in proxy_str:
+            host, port = proxy_str.split(":")
+        else:
+            raise ValueError(f"Invalid proxy {self.proxy}")
+
+        if self.use_proxy_for_telegram:
+            self.logger.info(f"Connecting to telegram with proxy {self.proxy}")
+            self.telegram_client = TelegramClient(
+                "sessions/" + self.name, **configuration["tg_kwargs"],
+                proxy={
+                    'proxy_type': python_socks.ProxyType.HTTP,
+                    'addr': host,
+                    'port': int(port),
+                    'username': username,
+                    'password': password
+                }
+            )
+        else:
+            self.telegram_client = TelegramClient("sessions/" + self.name, **configuration["tg_kwargs"])
+
         await self.telegram_client.connect()
         if not await self.telegram_client.is_user_authorized():
             self.logger.info(
@@ -177,9 +212,11 @@ class NotCoinAccountClient:
                         compute_check(result, password)
                     )
                 )
-            self.logger.info(f"Telegram client {self.name} authorized!")
+            me = await self.telegram_client.get_me()
+            self.logger.info(f"Telegram client {self.name} authorized! Id: {me.id}")
         else:
-            self.logger.info(f"Telegram client {self.name} authorized!")
+            me = await self.telegram_client.get_me()
+            self.logger.info(f"Telegram client {self.name} authorized! Id: {me.id}")
 
     async def get_webapp_data(self) -> typing.Tuple[str, str]:
         await self.prepare_telegram_client()
