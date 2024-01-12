@@ -166,7 +166,7 @@ class NotCoinAccountClient:
             self.logger.info(f"Connecting to telegram with proxy {self.proxy}")
             self.telegram_client = TelegramClient(
                 "sessions/" + self.name,
-                {**configuration["tg_kwargs"], **self.tg_kwargs_override},
+                **{**configuration["tg_kwargs"], **self.tg_kwargs_override},
                 proxy={
                     'proxy_type': python_socks.ProxyType.HTTP,
                     'addr': host,
