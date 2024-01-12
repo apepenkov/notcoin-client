@@ -1,5 +1,6 @@
 import os
 from configure import configure_main
+
 if not os.path.isfile("configuration.json"):
     print("Configuration not found!")
     configure_main()
@@ -146,22 +147,36 @@ class NotCoinAccountClient:
                 f"Telegram client {self.name} is not authorized! Please scan qr code in your telegram app.."
             )
             # await self.telegram_client.start()
-            tg_qr = await self.telegram_client.qr_login()
-            while True:
-                qr = qrcode.QRCode()
-                qr.add_data(tg_qr.url)
-                qr_f = io.StringIO()
-                qr.print_ascii(out=qr_f)
-                qr_f.seek(0)
-                print(qr_f.read())
-                expires_in = tg_qr.expires.timestamp() - datetime.datetime.now().timestamp()
-                try:
-                    await tg_qr.wait(timeout=expires_in)
-                    break
-                except asyncio.TimeoutError:
-                    self.logger.warning("Qr expired!")
-                    await tg_qr.recreate()
+            try:
+                tg_qr = await self.telegram_client.qr_login()
+                while True:
+                    qr = qrcode.QRCode()
+                    qr.add_data(tg_qr.url)
+                    qr_f = io.StringIO()
+                    qr.print_ascii(out=qr_f)
+                    qr_f.seek(0)
+                    print(qr_f.read())
+                    expires_in = (
+                        tg_qr.expires.timestamp() - datetime.datetime.now().timestamp()
+                    )
+                    try:
+                        await tg_qr.wait(timeout=expires_in)
+                        break
+                    except asyncio.TimeoutError:
+                        self.logger.warning("Qr expired!")
+                        await tg_qr.recreate()
+            except telethon.errors.SessionPasswordNeededError:
+                from telethon.password import compute_check
 
+                password = input("2FA password: ")
+                result = await self.telegram_client(
+                    telethon.tl.functions.account.GetPasswordRequest()
+                )
+                await self.telegram_client(
+                    telethon.tl.functions.auth.CheckPasswordRequest(
+                        compute_check(result, password)
+                    )
+                )
             self.logger.info(f"Telegram client {self.name} authorized!")
         else:
             self.logger.info(f"Telegram client {self.name} authorized!")
