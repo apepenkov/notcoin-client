@@ -137,6 +137,7 @@ class NotCoinAccountClient:
 
         self.telegram_client: typing.Optional[TelegramClient] = None
         self.logger = logger.getChild("accounts").getChild(self.name)
+        self.tg_kwargs_override = config.get("tg_kwargs_override") or {}
 
     async def prepare_telegram_client(self):
         if self.telegram_client:
@@ -164,7 +165,8 @@ class NotCoinAccountClient:
         if self.use_proxy_for_telegram:
             self.logger.info(f"Connecting to telegram with proxy {self.proxy}")
             self.telegram_client = TelegramClient(
-                "sessions/" + self.name, **configuration["tg_kwargs"],
+                "sessions/" + self.name,
+                {**configuration["tg_kwargs"], **self.tg_kwargs_override},
                 proxy={
                     'proxy_type': python_socks.ProxyType.HTTP,
                     'addr': host,
