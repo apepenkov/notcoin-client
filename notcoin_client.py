@@ -37,7 +37,7 @@ tracemalloc.start()
 
 NO_COLOR_MODE = os.getenv("NO_COLOR", "").lower() in ("true", "1", "yes")
 # logging level for 3rd party libraries
-GLOBAL_LOGGING_LEVEL = logging.DEBUG
+GLOBAL_LOGGING_LEVEL = logging.WARN
 # logging level for the bot
 LOCAL_LOGGING_LEVEL = logging.DEBUG
 LOGGING_FORMAT = "%(asctime)-15s.%(msecs)03d [%(levelname)-8s] %(name)-22s > %(filename)-18s:%(lineno)-5d - %(message)s"
