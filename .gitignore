@@ -9,3 +9,4 @@ configs_disabled
 configs_backup
 __pycache__
 ws_defs/__pycache__
+update_proxies.py

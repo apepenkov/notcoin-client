@@ -14,8 +14,9 @@
 
 ```json
 {
-"proxy": "http://login:password@ip:port",
-"configuration": null, "use_proxy_for_telegram": false
+  "proxy": "http://login:password@ip:port",
+  "configuration": null,
+  "use_proxy_for_telegram": false
 }
 ```
 
@@ -39,3 +40,16 @@ https://t.me/notcoin_bot?start=rp_4220671, the rp_4220671 is the part you need t
 python notcoin_client.py
 ```
 to run the bot
+
+
+Bot works in two modes:
+- `"constantClicks"`: constantly sends a click, holds energy level at some percentage (default 30-40%)
+- `"batchClicksOnRecovery"`: uses up all energy, and waits for it to recover, then uses it up again (recommended)
+ 
+To switch it, edit the file `configuration.json` and change `"mode"` accordingly.
+
+
+To configure what upgrades to buy, edit the file `configuration.json` and change `"auto_buy"` accordingly. Available upgrades are:
+- `"speedPerHour"` - energy recovery speed
+- `"multipleClicks"` - click multiplier
+- `"increaseLimit"` - energy limit

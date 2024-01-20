@@ -1,6 +1,5 @@
 {
   "proxy": "http://login:password@ip:port",
   "configuration": null,
-  "use_proxy_for_telegram": false,
-  "tg_kwargs_override": null
+  "use_proxy_for_telegram": false
 }

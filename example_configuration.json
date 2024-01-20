@@ -20,12 +20,18 @@
     "boost_send_once_per_from_ms": 1000,
     "boost_send_once_per_to_ms": 2000,
     "activate_turbo": true,
+    "activate_daily_turbo": true,
     "sleep_before_activate_turbo_ms": 800,
     "turbo_press_delay_from_ms": 70,
     "turbo_press_delay_to_ms": 130,
     "refresh_speed_every_sec": 60,
     "try_buy_every_from_sec": 120,
-    "try_buy_every_to_sec": 300
+    "try_buy_every_to_sec": 300,
+
+    "mode":"batchClicksOnRecovery",
+    "batch_clicks_per_second": 8.0,
+    "batch_clicks_per_second_turbo": 15.0,
+    "batch_clicks_spread": 0.3
   },
   "tg_kwargs": {
     "api_id": 0,

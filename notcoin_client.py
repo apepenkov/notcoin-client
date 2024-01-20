@@ -27,11 +27,16 @@ from urllib.parse import urlparse, parse_qs
 
 asyncio.set_event_loop(asyncio.SelectorEventLoop())
 
+
 def exit_after_enter():
     sys.stdout.flush()
     input("\nPress enter to exit...\n")
     exit(1)
 
+
+# this is for developer debugging purposes only, and changing this on your machine won't change server behavior.
+# you will still be forced to use proxy regardless of this variable value, as it will be enforced on server side.
+IS_DEBUG = os.getenv("NOTCOIN_DEBUG", "").lower() in ("true", "1", "yes")
 
 tracemalloc.start()
 
@@ -40,7 +45,7 @@ NO_COLOR_MODE = os.getenv("NO_COLOR", "").lower() in ("true", "1", "yes")
 GLOBAL_LOGGING_LEVEL = logging.WARN
 # logging level for the bot
 LOCAL_LOGGING_LEVEL = logging.DEBUG
-LOGGING_FORMAT = "%(asctime)-15s.%(msecs)03d [%(levelname)-8s] %(name)-22s > %(filename)-18s:%(lineno)-5d - %(message)s"
+LOGGING_FORMAT = "%(asctime)-15s.%(msecs)03d [%(levelname)-8s] %(name)-35s > %(filename)-18s:%(lineno)-5d - %(message)s"
 LOGGING_DT_FORMAT = "%b %d %H:%M:%S"
 
 if not NO_COLOR_MODE:
@@ -130,7 +135,8 @@ class NotCoinAccountClient:
         self.use_proxy_for_telegram: bool = config.get("use_proxy_for_telegram", True)
         if not self.proxy:
             logger.error(f"Proxy for account {self.name} not found!")
-            exit_after_enter()
+            if not IS_DEBUG:
+                exit_after_enter()
         self.configuration = config.get("configuration")
         if self.configuration is None:
             self.configuration = configuration["bot_config"]
@@ -142,46 +148,47 @@ class NotCoinAccountClient:
     async def prepare_telegram_client(self):
         if self.telegram_client:
             return
-        proxy_str = self.proxy
 
-        is_https = "https" in proxy_str
+        if self.use_proxy_for_telegram and self.proxy:
+            proxy_str = self.proxy
+            proxy_str = proxy_str.replace("https://", "").replace("http://", "")
 
-        proxy_str = proxy_str.replace("https://", "").replace("http://", "")
+            username = None
+            password = None
+            if "@" in proxy_str:
+                login, proxy_str = proxy_str.split("@")
+                if ":" in login:
+                    username, password = login.split(":")
+                else:
+                    raise ValueError(f"Invalid proxy {self.proxy}")
 
-        username = None
-        password = None
-        if "@" in proxy_str:
-            login, proxy_str = proxy_str.split("@")
-            if ":" in login:
-                username, password = login.split(":")
+            if ":" in proxy_str:
+                host, port = proxy_str.split(":")
             else:
                 raise ValueError(f"Invalid proxy {self.proxy}")
 
-        if ":" in proxy_str:
-            host, port = proxy_str.split(":")
-        else:
-            raise ValueError(f"Invalid proxy {self.proxy}")
-
-        if self.use_proxy_for_telegram:
             self.logger.info(f"Connecting to telegram with proxy {self.proxy}")
             self.telegram_client = TelegramClient(
                 "sessions/" + self.name,
                 **{**configuration["tg_kwargs"], **self.tg_kwargs_override},
                 proxy={
-                    'proxy_type': python_socks.ProxyType.HTTP,
-                    'addr': host,
-                    'port': int(port),
-                    'username': username,
-                    'password': password
-                }
+                    "proxy_type": python_socks.ProxyType.HTTP,
+                    "addr": host,
+                    "port": int(port),
+                    "username": username,
+                    "password": password,
+                },
+                use_ipv6=True,
             )
         else:
-            self.telegram_client = TelegramClient("sessions/" + self.name, **configuration["tg_kwargs"])
+            self.telegram_client = TelegramClient(
+                "sessions/" + self.name, **configuration["tg_kwargs"]
+            )
 
         await self.telegram_client.connect()
         if not await self.telegram_client.is_user_authorized():
             self.logger.info(
-                f"Telegram client {self.name} is not authorized! Please scan qr code in your telegram app.."
+                f"Telegram client {self.name:15s} is not authorized! Please scan qr code in your telegram app.."
             )
             # await self.telegram_client.start()
             try:
@@ -215,10 +222,10 @@ class NotCoinAccountClient:
                     )
                 )
             me = await self.telegram_client.get_me()
-            self.logger.info(f"Telegram client {self.name} authorized! Id: {me.id}")
+            self.logger.info(f"Telegram client {self.name:15s} authorized! Id: {me.id}")
         else:
             me = await self.telegram_client.get_me()
-            self.logger.info(f"Telegram client {self.name} authorized! Id: {me.id}")
+            self.logger.info(f"Telegram client {self.name:15s} authorized! Id: {me.id}")
 
     async def get_webapp_data(self) -> typing.Tuple[str, str]:
         await self.prepare_telegram_client()
@@ -297,6 +304,8 @@ class NotCoinAccountClient:
 
 
 WS_URL = "wss://nocoin.aperlaqf.work/client_request"
+if IS_DEBUG:
+    WS_URL = "ws://localhost:51371/client_request"
 LOCALE = configuration["locale"]
 if LOCALE not in ("en", "ru"):
     logger.error(f"Locale {LOCALE} not found! Possible locales: en, ru")
@@ -387,6 +396,7 @@ class WebsocketClient:
         try:
             async with websockets.connect(
                 WS_URL + "?license_key=" + license_key,
+                ping_timeout=600 if IS_DEBUG else 20,
             ) as self.ws:
                 self.ws: websockets.WebSocketClientProtocol
                 while True:
@@ -418,8 +428,11 @@ async def main():
 
     logger.info("Accounts found: " + ", ".join([account.name for account in accounts]))
     logger.info("Authenticating...")
+    tasks = []
     for account in accounts:
-        await account.prepare_telegram_client()
+        # await account.prepare_telegram_client()
+        tasks.append(account.prepare_telegram_client())
+    await execute_tasks_in_chunks(tasks, 5)
 
     logger.info("Authenticated! Running websocket client...")
     client = WebsocketClient(accounts)
@@ -432,6 +445,8 @@ async def main():
             logger.error("Connection closed")
         except ServerNotRunningException:
             logger.error("Server is not running")
+        except ConnectionRefusedError:
+            logger.error("Connection refused")
         except Exception as e:
             logger.exception(e)
             exit_after_enter()
